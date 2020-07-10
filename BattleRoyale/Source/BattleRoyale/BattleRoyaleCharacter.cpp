@@ -82,8 +82,8 @@ void ABattleRoyaleCharacter::OnRep_Gun()
 
 void ABattleRoyaleCharacter::GiveWeapon(UClass* GunToGive)
 {
-	//if (GetLocalRole() == ROLE_Authority)
-	//{
+	if (GetLocalRole() == ROLE_Authority)
+	{
 		FActorSpawnParameters SpawnParams;
 		SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
 		Gun = GetWorld()->SpawnActor<AGunBase>(GunToGive, GetActorTransform(), SpawnParams);
@@ -93,12 +93,8 @@ void ABattleRoyaleCharacter::GiveWeapon(UClass* GunToGive)
 			Gun->SetInstigator(this);
 			UE_LOG(LogTemp, Warning, TEXT("Spawned"))
 		}
-		else
-		{
-			UE_LOG(LogTemp, Warning, TEXT("Not Spawned"))
-		}
 		OnRep_Gun();
-	//}
+	}
 }
 
 void ABattleRoyaleCharacter::OnFire()
