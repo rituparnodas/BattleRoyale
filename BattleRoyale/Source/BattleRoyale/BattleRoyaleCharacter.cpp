@@ -12,6 +12,7 @@
 #include "GunBase.h"
 #include "Net/UnrealNetwork.h"
 #include "GameFramework/DamageType.h"
+#include "DrawDebugHelpers.h"
 
 DEFINE_LOG_CATEGORY_STATIC(LogFPChar, Warning, All);
 
@@ -116,7 +117,7 @@ void ABattleRoyaleCharacter::SetupFire()
 {
 	FVector EyeLocation;
 	FRotator EyeRotation;
-	GetActorEyesViewPoint(EyeLocation, EyeRotation);
+	GetController()->GetActorEyesViewPoint(EyeLocation, EyeRotation);
 	FVector ShotDirection = EyeRotation.Vector();
 	FVector TraceEnd = EyeLocation + (ShotDirection * TraceRange);
 
@@ -129,6 +130,7 @@ void ABattleRoyaleCharacter::SetupFire()
 	FHitResult Hit;
 	if (GetWorld()->LineTraceSingleByChannel(Hit, EyeLocation, TraceEnd, ECollisionChannel::ECC_Visibility, QueryParams))
 	{
+		DrawDebugLine(GetWorld(), EyeLocation, TraceEnd, FColor::Magenta, false, 10.f, 0, 1.0f);
 		HitActor = Hit.GetActor();
 		Victim = Cast<ABattleRoyaleCharacter>(HitActor);
 		if (Victim)
@@ -149,12 +151,12 @@ void ABattleRoyaleCharacter::ServerFire_Implementation()
 
 void ABattleRoyaleCharacter::OnRep_KilledBy()
 {
+	// These Are From Who Is Taking Damage
 	GetMesh()->SetCollisionEnabled(ECollisionEnabled::PhysicsOnly);
 	GetMesh()->SetSimulatePhysics(true);
 	GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	GetMesh1P()->SetCollisionEnabled(ECollisionEnabled::PhysicsOnly);
 	GetMesh1P()->SetSimulatePhysics(true);
-
 }
 
 void ABattleRoyaleCharacter::HandleTakeDamage(AActor* DamagedActor, float Damage,
