@@ -11,6 +11,7 @@
 #include "Kismet/GameplayStatics.h"
 #include "GunBase.h"
 #include "Net/UnrealNetwork.h"
+#include "GameFramework/DamageType.h"
 
 DEFINE_LOG_CATEGORY_STATIC(LogFPChar, Warning, All);
 
@@ -42,6 +43,12 @@ ABattleRoyaleCharacter::ABattleRoyaleCharacter()
 void ABattleRoyaleCharacter::BeginPlay()
 {
 	Super::BeginPlay();
+
+	if (GetLocalRole() == ROLE_Authority)
+	{
+		OnTakeAnyDamage.AddDynamic(this, &ABattleRoyaleCharacter::HandleTakeDamage);
+		Health = StartingHealth;
+	}
 
 	if (GunClass)
 	{
@@ -123,12 +130,14 @@ void ABattleRoyaleCharacter::SetupFire()
 	if (GetWorld()->LineTraceSingleByChannel(Hit, EyeLocation, TraceEnd, ECollisionChannel::ECC_Visibility, QueryParams))
 	{
 		HitActor = Hit.GetActor();
-		ABattleRoyaleCharacter* Pawn = Cast<ABattleRoyaleCharacter>(HitActor);
-		if (Pawn)
+		Victim = Cast<ABattleRoyaleCharacter>(HitActor);
+		if (Victim)
 		{
-			UE_LOG(LogTemp, Warning, TEXT("Died"))
-				Pawn->KilledBy = this;
-			OnRep_KilledBy();
+			if (GetLocalRole() == ROLE_Authority)
+			{
+				UGameplayStatics::ApplyDamage(Victim, Gun->Damage, GetInstigatorController(), this, DamageTypes);
+				UE_LOG(LogTemp, Warning, TEXT("Victim, Player : %s"), *Victim->GetName())
+			}
 		}
 	}
 }
@@ -140,21 +149,61 @@ void ABattleRoyaleCharacter::ServerFire_Implementation()
 
 void ABattleRoyaleCharacter::OnRep_KilledBy()
 {
-	ABattleRoyaleCharacter* VictimActor = Cast<ABattleRoyaleCharacter>(HitActor);
-	if (VictimActor)
+	GetMesh()->SetCollisionEnabled(ECollisionEnabled::PhysicsOnly);
+	GetMesh()->SetSimulatePhysics(true);
+	GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	GetMesh1P()->SetCollisionEnabled(ECollisionEnabled::PhysicsOnly);
+	GetMesh1P()->SetSimulatePhysics(true);
+
+}
+
+void ABattleRoyaleCharacter::HandleTakeDamage(AActor* DamagedActor, float Damage,
+	const UDamageType* DamageType, AController* InstigatedBy, AActor* DamageCauser)
+{
+	if (DamagedActor == DamageCauser) return;
+
+	ModifyHealth(Damage);
+	UE_LOG(LogTemp, Warning, TEXT("Health : %f"), Health)
+	if (Health <= 0)
 	{
-		VictimActor->GetMesh()->SetCollisionEnabled(ECollisionEnabled::PhysicsOnly);
-		VictimActor->GetMesh()->SetSimulatePhysics(true);
-		VictimActor->GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-		VictimActor->GetMesh1P()->SetCollisionEnabled(ECollisionEnabled::PhysicsOnly);
-		VictimActor->GetMesh1P()->SetSimulatePhysics(true);
+		ABattleRoyaleCharacter* Killer = Cast<ABattleRoyaleCharacter>(DamageCauser);
+		if (Killer)
+		{
+			KilledByPlayer(Killer);
+		}
+		else
+		{
+			KilledByEnvironment(DamageCauser); // TODO Set As Safe Zone
+		}
 	}
 }
 
-bool ABattleRoyaleCharacter::ServerFire_Validate()
+void ABattleRoyaleCharacter::KilledByPlayer(class ABattleRoyaleCharacter* Killer)
 {
-	return true;
+	if (GetLocalRole() == ROLE_Authority)
+	{
+		KilledBy = Killer;
+		OnRep_KilledBy();
+		UE_LOG(LogTemp, Warning, TEXT("By Player : %s"), *KilledBy->GetName())
+	}
 }
+
+void ABattleRoyaleCharacter::KilledByEnvironment(AActor* EnvActor)
+{
+	UE_LOG(LogTemp, Warning, TEXT("By Zone"))
+}
+
+void ABattleRoyaleCharacter::ModifyHealth(float HealthDelta)
+{
+	if (GetLocalRole() == ROLE_Authority)
+	{
+		Health = FMath::Clamp(Health - HealthDelta, 0.f, 150.f);
+	}
+}
+
+void ABattleRoyaleCharacter::OnRep_Health(){}
+
+bool ABattleRoyaleCharacter::ServerFire_Validate(){ return true; }
 
 void ABattleRoyaleCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
@@ -162,6 +211,7 @@ void ABattleRoyaleCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty
 
 	DOREPLIFETIME(ABattleRoyaleCharacter, Gun);
 	DOREPLIFETIME(ABattleRoyaleCharacter, KilledBy);
+	DOREPLIFETIME(ABattleRoyaleCharacter, Health);
 }
 
 /*=============================================================================================*/
@@ -194,7 +244,7 @@ void ABattleRoyaleCharacter::MoveForward(float Value)
 {
 	if (Value != 0.0f)
 	{
-		// add movement in that direction
+		// add movement in that direction 
 		AddMovementInput(GetActorForwardVector(), Value);
 	}
 }

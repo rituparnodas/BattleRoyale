@@ -85,6 +85,34 @@ protected:
 
 	AActor* HitActor;
 
+	UPROPERTY(BlueprintReadOnly)
+	class ABattleRoyaleCharacter* Victim;
+
+	UFUNCTION(BlueprintCallable)
+	void KilledByPlayer(class ABattleRoyaleCharacter* Killer);
+
+	UFUNCTION(BlueprintCallable)
+	void KilledByEnvironment(AActor* EnvActor);
+
+	UPROPERTY(EditAnywhere)
+	TSubclassOf<class UDamageType> DamageTypes;
+
+	UFUNCTION()
+		void HandleTakeDamage(AActor* DamagedActor, float Damage, const class UDamageType* DamageType, class AController* InstigatedBy, AActor* DamageCauser);
+
+	// *********************************Health*************************************
+	UPROPERTY(EditAnywhere, ReplicatedUsing=OnRep_Health, BlueprintReadOnly, Category = "LineTrace")
+		float Health = 100.f;
+
+	UPROPERTY(EditAnywhere)
+	float StartingHealth = 100.f;
+
+	UFUNCTION()
+		void OnRep_Health();
+
+	UFUNCTION(BlueprintCallable)
+	void ModifyHealth(float HealthDelta);
+
 	//========================================================================================
 	void MoveForward(float Val);
 	void MoveRight(float Val);
