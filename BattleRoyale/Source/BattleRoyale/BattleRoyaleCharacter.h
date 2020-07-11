@@ -51,9 +51,6 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category=Gameplay)
 	class USoundBase* FireSound;
 
-	/** AnimMontage to play each time we fire */
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Gameplay)
-	class UAnimMontage* FireAnimation;
 
 	UPROPERTY(ReplicatedUsing=OnRep_Gun, BlueprintReadWrite, Category = "Gameplay")
 	class AGunBase* Gun;
@@ -72,22 +69,26 @@ protected:
 	/** Fires a projectile. */
 	void OnFire();
 
-	/** Handles moving forward/backward */
+	void SetupFire();
+
+	UFUNCTION(Server, Reliable, WithValidation)
+	void ServerFire();
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "LineTrace")
+	float TraceRange = 10000;
+
+	UPROPERTY(ReplicatedUsing=OnRep_KilledBy, BlueprintReadWrite, Category = "Gameplay")
+		class ABattleRoyaleCharacter* KilledBy;
+
+	UFUNCTION()
+		void OnRep_KilledBy();
+
+	AActor* HitActor;
+
+	//========================================================================================
 	void MoveForward(float Val);
-
-	/** Handles stafing movement, left and right */
 	void MoveRight(float Val);
-
-	/**
-	 * Called via input to turn at a given rate.
-	 * @param Rate	This is a normalized rate, i.e. 1.0 means 100% of desired turn rate
-	 */
 	void TurnAtRate(float Rate);
-
-	/**
-	 * Called via input to turn look up/down at a given rate.
-	 * @param Rate	This is a normalized rate, i.e. 1.0 means 100% of desired turn rate
-	 */
 	void LookUpAtRate(float Rate);
 
 	struct TouchData
@@ -102,24 +103,15 @@ protected:
 	void EndTouch(const ETouchIndex::Type FingerIndex, const FVector Location);
 	void TouchUpdate(const ETouchIndex::Type FingerIndex, const FVector Location);
 	TouchData	TouchItem;
-	
-protected:
-	// APawn interface
-	virtual void SetupPlayerInputComponent(UInputComponent* InputComponent) override;
-	// End of APawn interface
 
-	/* 
-	 * Configures input for touchscreen devices if there is a valid touch interface for doing so 
-	 *
-	 * @param	InputComponent	The input component pointer to bind controls to
-	 * @returns true if touch controls were enabled.
-	 */
+	virtual void SetupPlayerInputComponent(UInputComponent* InputComponent) override;
+
 	bool EnableTouchscreenMovement(UInputComponent* InputComponent);
 
 public:
-	/** Returns Mesh1P subobject **/
+
 	FORCEINLINE class USkeletalMeshComponent* GetMesh1P() const { return Mesh1P; }
-	/** Returns FirstPersonCameraComponent subobject **/
+
 	FORCEINLINE class UCameraComponent* GetFirstPersonCameraComponent() const { return FirstPersonCameraComponent; }
 
 };

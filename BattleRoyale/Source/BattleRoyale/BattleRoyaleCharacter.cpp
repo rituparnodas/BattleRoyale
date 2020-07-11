@@ -91,7 +91,6 @@ void ABattleRoyaleCharacter::GiveWeapon(UClass* GunToGive)
 		{
 			Gun->SetOwner(this);
 			Gun->SetInstigator(this);
-			UE_LOG(LogTemp, Warning, TEXT("Spawned"))
 		}
 		OnRep_Gun();
 	}
@@ -99,25 +98,73 @@ void ABattleRoyaleCharacter::GiveWeapon(UClass* GunToGive)
 
 void ABattleRoyaleCharacter::OnFire()
 {
-
-	// try and play the sound if specified
-	if (FireSound != NULL)
+	if (GetLocalRole() < ROLE_Authority)
 	{
-		UGameplayStatics::PlaySoundAtLocation(this, FireSound, GetActorLocation());
+		ServerFire();
 	}
+	SetupFire();
+}
 
-	// try and play a firing animation if specified
-	if (FireAnimation != NULL)
+void ABattleRoyaleCharacter::SetupFire()
+{
+	FVector EyeLocation;
+	FRotator EyeRotation;
+	GetActorEyesViewPoint(EyeLocation, EyeRotation);
+	FVector ShotDirection = EyeRotation.Vector();
+	FVector TraceEnd = EyeLocation + (ShotDirection * TraceRange);
+
+	FCollisionQueryParams QueryParams;
+	QueryParams.AddIgnoredActor(this);
+	//QueryParams.AddIgnoredActor(MyOwner);
+	QueryParams.bTraceComplex = true;
+	QueryParams.bReturnPhysicalMaterial = true;
+
+	FHitResult Hit;
+	if (GetWorld()->LineTraceSingleByChannel(Hit, EyeLocation, TraceEnd, ECollisionChannel::ECC_Visibility, QueryParams))
 	{
-		// Get the animation object for the arms mesh
-		UAnimInstance* AnimInstance = Mesh1P->GetAnimInstance();
-		if (AnimInstance != NULL)
+		HitActor = Hit.GetActor();
+		ABattleRoyaleCharacter* Pawn = Cast<ABattleRoyaleCharacter>(HitActor);
+		if (Pawn)
 		{
-			AnimInstance->Montage_Play(FireAnimation, 1.f);
+			UE_LOG(LogTemp, Warning, TEXT("Died"))
+				Pawn->KilledBy = this;
+			OnRep_KilledBy();
 		}
 	}
 }
 
+void ABattleRoyaleCharacter::ServerFire_Implementation()
+{
+	OnFire();
+}
+
+void ABattleRoyaleCharacter::OnRep_KilledBy()
+{
+	ABattleRoyaleCharacter* VictimActor = Cast<ABattleRoyaleCharacter>(HitActor);
+	if (VictimActor)
+	{
+		VictimActor->GetMesh()->SetCollisionEnabled(ECollisionEnabled::PhysicsOnly);
+		VictimActor->GetMesh()->SetSimulatePhysics(true);
+		VictimActor->GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+		VictimActor->GetMesh1P()->SetCollisionEnabled(ECollisionEnabled::PhysicsOnly);
+		VictimActor->GetMesh1P()->SetSimulatePhysics(true);
+	}
+}
+
+bool ABattleRoyaleCharacter::ServerFire_Validate()
+{
+	return true;
+}
+
+void ABattleRoyaleCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+
+	DOREPLIFETIME(ABattleRoyaleCharacter, Gun);
+	DOREPLIFETIME(ABattleRoyaleCharacter, KilledBy);
+}
+
+/*=============================================================================================*/
 void ABattleRoyaleCharacter::BeginTouch(const ETouchIndex::Type FingerIndex, const FVector Location)
 {
 	if (TouchItem.bIsPressed == true)
@@ -183,12 +230,4 @@ bool ABattleRoyaleCharacter::EnableTouchscreenMovement(class UInputComponent* Pl
 	}
 	
 	return false;
-}
-
-
-void ABattleRoyaleCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
-{
-	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
-
-	DOREPLIFETIME(ABattleRoyaleCharacter, Gun);
 }
