@@ -109,7 +109,11 @@ void ABattleRoyaleCharacter::OnRep_Reloading()
 	// TODO Play Animation Monatage
 
 	UE_LOG(LogTemp, Error, TEXT("On Rep Reloading"))
-	//OnGunReload(IsLocallyControlled());
+		//OnGunReload(IsLocallyControlled());
+		if (Reloading)
+		{
+			Gun->ReloadAnimation();
+		}
 }
 
 void ABattleRoyaleCharacter::OnFire()
