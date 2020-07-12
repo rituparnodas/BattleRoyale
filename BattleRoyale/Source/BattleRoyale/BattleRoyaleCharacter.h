@@ -65,11 +65,14 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon")
 	TSubclassOf<class AGunBase> GunClass;
 
-	UPROPERTY(EditAnywhere, ReplicatedUsing = OnRep_Reloading, Category = "Weapon")
+	UPROPERTY(EditAnywhere, ReplicatedUsing = OnRep_Reloading, BlueprintReadWrite, Category = "Weapon")
 		bool Reloading = false;
 
 	UFUNCTION()
 	void OnRep_Reloading();
+
+	UFUNCTION(BlueprintImplementableEvent)
+	void OnGunReload(bool IsLocalPlayer);
 
 protected:
 	

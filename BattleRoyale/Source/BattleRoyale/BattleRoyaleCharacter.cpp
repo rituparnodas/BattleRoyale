@@ -108,7 +108,8 @@ void ABattleRoyaleCharacter::OnRep_Reloading()
 {
 	// TODO Play Animation Monatage
 
-	UE_LOG(LogTemp, Error, TEXT("Reloading"))
+	UE_LOG(LogTemp, Error, TEXT("On Rep Reloading"))
+	//OnGunReload(IsLocallyControlled());
 }
 
 void ABattleRoyaleCharacter::OnFire()
