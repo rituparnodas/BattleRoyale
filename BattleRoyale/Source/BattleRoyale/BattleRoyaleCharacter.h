@@ -50,7 +50,8 @@ public:
 	/** Sound to play each time we fire */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category=Gameplay)
 	class USoundBase* FireSound;
-
+	
+	//=======================Gun=================================
 
 	UPROPERTY(ReplicatedUsing=OnRep_Gun, BlueprintReadWrite, Category = "Gameplay")
 	class AGunBase* Gun;
@@ -63,6 +64,12 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon")
 	TSubclassOf<class AGunBase> GunClass;
+
+	UPROPERTY(EditAnywhere, ReplicatedUsing = OnRep_Reloading, Category = "Weapon")
+		bool Reloading = false;
+
+	UFUNCTION()
+	void OnRep_Reloading();
 
 protected:
 	
@@ -112,6 +119,7 @@ protected:
 
 	UFUNCTION(BlueprintCallable)
 	void ModifyHealth(float HealthDelta);
+
 
 	//========================================================================================
 	void MoveForward(float Val);

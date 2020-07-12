@@ -104,17 +104,29 @@ void ABattleRoyaleCharacter::GiveWeapon(UClass* GunToGive)
 	}
 }
 
+void ABattleRoyaleCharacter::OnRep_Reloading()
+{
+	// TODO Play Animation Monatage
+
+	UE_LOG(LogTemp, Error, TEXT("Reloading"))
+}
+
 void ABattleRoyaleCharacter::OnFire()
 {
 	if (GetLocalRole() < ROLE_Authority)
 	{
 		ServerFire();
 	}
-	SetupFire();
+	if (Gun->HasAmmo() && !Reloading)
+	{
+		SetupFire();
+	}
 }
 
 void ABattleRoyaleCharacter::SetupFire()
 {
+	Gun->OnFired();// Decrement A Bullet
+
 	FVector EyeLocation;
 	FRotator EyeRotation;
 	GetController()->GetActorEyesViewPoint(EyeLocation, EyeRotation);
@@ -131,11 +143,12 @@ void ABattleRoyaleCharacter::SetupFire()
 	if (GetWorld()->LineTraceSingleByChannel(Hit, EyeLocation, TraceEnd, ECollisionChannel::ECC_Visibility, QueryParams))
 	{
 		DrawDebugLine(GetWorld(), EyeLocation, TraceEnd, FColor::Magenta, false, 10.f, 0, 1.0f);
+
 		HitActor = Hit.GetActor();
 		Victim = Cast<ABattleRoyaleCharacter>(HitActor);
-		if (Victim)
+		if (GetLocalRole() == ROLE_Authority)
 		{
-			if (GetLocalRole() == ROLE_Authority)
+			if (Victim)
 			{
 				UGameplayStatics::ApplyDamage(Victim, Gun->Damage, GetInstigatorController(), this, DamageTypes);
 				UE_LOG(LogTemp, Warning, TEXT("Victim, Player : %s"), *Victim->GetName())
@@ -214,6 +227,7 @@ void ABattleRoyaleCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty
 	DOREPLIFETIME(ABattleRoyaleCharacter, Gun);
 	DOREPLIFETIME(ABattleRoyaleCharacter, KilledBy);
 	DOREPLIFETIME(ABattleRoyaleCharacter, Health);
+	DOREPLIFETIME(ABattleRoyaleCharacter, Reloading);
 }
 
 /*=============================================================================================*/
