@@ -74,6 +74,22 @@ public:
 	UFUNCTION(BlueprintImplementableEvent)
 	void OnGunReload(bool IsLocalPlayer);
 
+	// *********************************Health*************************************
+	UPROPERTY(EditAnywhere, ReplicatedUsing = OnRep_Health, BlueprintReadOnly, Category = "Health")
+		float Health = 100.f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Health")
+		float StartingHealth = 100.f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Health")
+		float MaxHealth = 150.f;
+
+	UFUNCTION()
+		void OnRep_Health();
+
+	UFUNCTION(BlueprintCallable)
+		void ModifyHealth(float HealthDelta);
+
 protected:
 	
 	/** Fires a projectile. */
@@ -110,19 +126,11 @@ protected:
 	UFUNCTION()
 		void HandleTakeDamage(AActor* DamagedActor, float Damage, const class UDamageType* DamageType, class AController* InstigatedBy, AActor* DamageCauser);
 
-	// *********************************Health*************************************
-	UPROPERTY(EditAnywhere, ReplicatedUsing=OnRep_Health, BlueprintReadOnly, Category = "LineTrace")
-		float Health = 100.f;
+	//******************************************Loot*****************************************
+	void Loot();
 
-	UPROPERTY(EditAnywhere)
-	float StartingHealth = 100.f;
-
-	UFUNCTION()
-		void OnRep_Health();
-
-	UFUNCTION(BlueprintCallable)
-	void ModifyHealth(float HealthDelta);
-
+	UFUNCTION(Server, Reliable, WithValidation)
+	void ServerLoot();
 
 	//========================================================================================
 	void MoveForward(float Val);

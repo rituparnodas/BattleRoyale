@@ -69,6 +69,9 @@ void ABattleRoyaleCharacter::SetupPlayerInputComponent(class UInputComponent* Pl
 	// Bind fire event
 	PlayerInputComponent->BindAction("Fire", IE_Pressed, this, &ABattleRoyaleCharacter::OnFire);
 
+	// Loot
+	PlayerInputComponent->BindAction("Loot", IE_Pressed, this, &ABattleRoyaleCharacter::Loot);
+
 	// Enable touchscreen input
 	EnableTouchscreenMovement(PlayerInputComponent);
 
@@ -80,6 +83,16 @@ void ABattleRoyaleCharacter::SetupPlayerInputComponent(class UInputComponent* Pl
 	PlayerInputComponent->BindAxis("TurnRate", this, &ABattleRoyaleCharacter::TurnAtRate);
 	PlayerInputComponent->BindAxis("LookUp", this, &APawn::AddControllerPitchInput);
 	PlayerInputComponent->BindAxis("LookUpRate", this, &ABattleRoyaleCharacter::LookUpAtRate);
+}
+
+void ABattleRoyaleCharacter::Loot()
+{
+
+}
+
+void ABattleRoyaleCharacter::ServerLoot_Implementation()
+{
+	Loot();
 }
 
 void ABattleRoyaleCharacter::OnRep_Gun()
@@ -217,13 +230,15 @@ void ABattleRoyaleCharacter::ModifyHealth(float HealthDelta)
 {
 	if (GetLocalRole() == ROLE_Authority)
 	{
-		Health = FMath::Clamp(Health - HealthDelta, 0.f, 150.f);
+		Health = FMath::Clamp(Health - HealthDelta, 0.f, MaxHealth);
 	}
 }
 
 void ABattleRoyaleCharacter::OnRep_Health(){}
 
 bool ABattleRoyaleCharacter::ServerFire_Validate(){ return true; }
+
+bool ABattleRoyaleCharacter::ServerLoot_Validate() { return true; }
 
 void ABattleRoyaleCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
