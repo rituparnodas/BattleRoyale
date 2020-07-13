@@ -13,6 +13,7 @@
 #include "Net/UnrealNetwork.h"
 #include "GameFramework/DamageType.h"
 #include "DrawDebugHelpers.h"
+#include "PickupGun.h"
 
 DEFINE_LOG_CATEGORY_STATIC(LogFPChar, Warning, All);
 
@@ -87,7 +88,17 @@ void ABattleRoyaleCharacter::SetupPlayerInputComponent(class UInputComponent* Pl
 
 void ABattleRoyaleCharacter::Loot()
 {
+	if (GetLocalRole() < ROLE_Authority)
+	{
+		ServerLoot();
+	}
+	//TODO Setup Loot 
 
+	if (CurrentGunPickup)
+	{
+		GiveWeapon(CurrentGunPickup->WeaponToGive);
+		CurrentGunPickup->Destroy();
+	}
 }
 
 void ABattleRoyaleCharacter::ServerLoot_Implementation()
@@ -97,36 +108,82 @@ void ABattleRoyaleCharacter::ServerLoot_Implementation()
 
 void ABattleRoyaleCharacter::OnRep_Gun()
 {
-	Gun->ThirdPersonGun->AttachToComponent(GetMesh(), FAttachmentTransformRules::SnapToTargetNotIncludingScale, "WeaponSocket");
-	Gun->FirstPersonGun->AttachToComponent(GetMesh1P(), FAttachmentTransformRules::SnapToTargetNotIncludingScale, "WeaponSocket");
+	if (Gun)
+	{
+		Gun->ThirdPersonGun->AttachToComponent(GetMesh(), FAttachmentTransformRules::SnapToTargetNotIncludingScale, "WeaponSocket");
+		Gun->FirstPersonGun->AttachToComponent(GetMesh1P(), FAttachmentTransformRules::SnapToTargetNotIncludingScale, "WeaponSocket");
+	}
 }
 
 void ABattleRoyaleCharacter::GiveWeapon(UClass* GunToGive)
 {
 	if (GetLocalRole() == ROLE_Authority)
 	{
-		FActorSpawnParameters SpawnParams;
-		SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
-		Gun = GetWorld()->SpawnActor<AGunBase>(GunToGive, GetActorTransform(), SpawnParams);
-		if (Gun)
+		if (!Gun)
 		{
-			Gun->SetOwner(this);
-			Gun->SetInstigator(this);
+			FActorSpawnParameters SpawnParams;
+			SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+			Gun = GetWorld()->SpawnActor<AGunBase>(GunToGive, GetActorTransform(), SpawnParams);
+			if (Gun)
+			{
+				Gun->SetOwner(this);
+				Gun->SetInstigator(this);
+			}
+			OnRep_Gun();
 		}
-		OnRep_Gun();
+		else // If You Have Gun Then Drop That And Then Take New One
+		{
+			DropCurrentWeapon();
+
+			FActorSpawnParameters SpawnParams;
+			SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+			Gun = GetWorld()->SpawnActor<AGunBase>(GunToGive, GetActorTransform(), SpawnParams);
+			if (Gun)
+			{
+				Gun->SetOwner(this);
+				Gun->SetInstigator(this);
+			}
+			OnRep_Gun();
+		}
+
 	}
 }
 
 void ABattleRoyaleCharacter::OnRep_Reloading()
 {
-	// TODO Play Animation Monatage
+	if (Reloading)
+	{
+		Gun->ReloadAnimation();
+	}
+}
 
-	UE_LOG(LogTemp, Error, TEXT("On Rep Reloading"))
-		//OnGunReload(IsLocallyControlled());
-		if (Reloading)
-		{
-			Gun->ReloadAnimation();
-		}
+void ABattleRoyaleCharacter::DropCurrentWeapon()
+{
+	if (GetLocalRole() == ROLE_Authority)
+	{
+		APickupGun* PickupToDrop = GetWorld()->SpawnActorDeferred<APickupGun>(Gun->WeaponPickup, GetPickupSpawnTransform());
+		PickupToDrop->CurrentAmmoInClip = Gun->CurrentAmmo;
+		PickupToDrop->CurrentSpareAmmo = Gun->CurrentBagAmmo;
+		UGameplayStatics::FinishSpawningActor(PickupToDrop, GetPickupSpawnTransform());
+		Gun->Destroy();
+		Gun = nullptr;
+	}
+}
+
+FTransform ABattleRoyaleCharacter::GetPickupSpawnTransform()
+{
+	FTransform Transform;
+
+	FVector EyeLocation;
+	FRotator EyeRotation;
+	GetController()->GetActorEyesViewPoint(EyeLocation, EyeRotation);
+
+	FVector LookDirection = EyeRotation.Vector();
+	FVector Location = EyeLocation + (LookDirection * 200);
+	
+	Transform.SetLocation(Location);
+
+	return Transform;
 }
 
 void ABattleRoyaleCharacter::OnFire()
@@ -248,6 +305,7 @@ void ABattleRoyaleCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty
 	DOREPLIFETIME(ABattleRoyaleCharacter, KilledBy);
 	DOREPLIFETIME(ABattleRoyaleCharacter, Health);
 	DOREPLIFETIME(ABattleRoyaleCharacter, Reloading);
+	DOREPLIFETIME_CONDITION(ABattleRoyaleCharacter, CurrentGunPickup,COND_OwnerOnly);
 }
 
 /*=============================================================================================*/

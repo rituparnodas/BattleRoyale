@@ -74,6 +74,15 @@ public:
 	UFUNCTION(BlueprintImplementableEvent)
 	void OnGunReload(bool IsLocalPlayer);
 
+	UPROPERTY(Replicated, BlueprintReadWrite, Category = "Pickup")
+	class APickupGun* CurrentGunPickup;
+
+	UFUNCTION(BlueprintCallable)
+		void DropCurrentWeapon();
+
+	UFUNCTION(BlueprintPure)
+	FTransform GetPickupSpawnTransform();
+
 	// *********************************Health*************************************
 	UPROPERTY(EditAnywhere, ReplicatedUsing = OnRep_Health, BlueprintReadOnly, Category = "Health")
 		float Health = 100.f;
