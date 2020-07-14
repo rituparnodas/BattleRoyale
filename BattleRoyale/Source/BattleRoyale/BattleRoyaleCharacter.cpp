@@ -14,6 +14,7 @@
 #include "GameFramework/DamageType.h"
 #include "DrawDebugHelpers.h"
 #include "PickupGun.h"
+#include "BRPlayerController.h"
 
 DEFINE_LOG_CATEGORY_STATIC(LogFPChar, Warning, All);
 
@@ -242,11 +243,20 @@ void ABattleRoyaleCharacter::ServerFire_Implementation()
 void ABattleRoyaleCharacter::OnRep_KilledBy()
 {
 	// These Are From Who Is Taking Damage
-	GetMesh()->SetCollisionEnabled(ECollisionEnabled::PhysicsOnly);
-	GetMesh()->SetSimulatePhysics(true);
-	GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-	GetMesh1P()->SetCollisionEnabled(ECollisionEnabled::PhysicsOnly);
-	GetMesh1P()->SetSimulatePhysics(true);
+	if (IsLocallyControlled())
+	{
+		HandleLocalDeath();
+
+		GetMesh()->SetCollisionEnabled(ECollisionEnabled::PhysicsOnly);
+		GetMesh()->SetSimulatePhysics(true);
+		GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	}
+	else
+	{
+		GetMesh()->SetCollisionEnabled(ECollisionEnabled::PhysicsOnly);
+		GetMesh()->SetSimulatePhysics(true);
+		GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	}
 }
 
 void ABattleRoyaleCharacter::HandleTakeDamage(AActor* DamagedActor, float Damage,
@@ -267,6 +277,20 @@ void ABattleRoyaleCharacter::HandleTakeDamage(AActor* DamagedActor, float Damage
 		{
 			KilledByEnvironment(DamageCauser); // TODO Set As Safe Zone
 		}
+	}
+}
+
+void ABattleRoyaleCharacter::HandleLocalDeath()
+{
+	//GetMesh1P()->SetCollisionEnabled(ECollisionEnabled::PhysicsOnly);
+	//GetMesh1P()->SetSimulatePhysics(true);
+
+	ABRPlayerController* PC = Cast<ABRPlayerController>(GetController());
+	if (PC && KilledBy)
+	{
+		PC->BeginSpectating(KilledBy);
+		GetMesh()->SetOwnerNoSee(false);
+		GetMesh1P()->SetOwnerNoSee(true);
 	}
 }
 

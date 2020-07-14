@@ -135,6 +135,10 @@ protected:
 	UFUNCTION()
 		void HandleTakeDamage(AActor* DamagedActor, float Damage, const class UDamageType* DamageType, class AController* InstigatedBy, AActor* DamageCauser);
 
+	UFUNCTION(BlueprintCallable)
+		void HandleLocalDeath();
+	
+
 	//******************************************Loot*****************************************
 	void Loot();
 
