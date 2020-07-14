@@ -92,7 +92,6 @@ void ABattleRoyaleCharacter::Loot()
 	{
 		ServerLoot();
 	}
-	//TODO Setup Loot 
 
 	if (CurrentGunPickup)
 	{
@@ -162,6 +161,7 @@ void ABattleRoyaleCharacter::DropCurrentWeapon()
 	if (GetLocalRole() == ROLE_Authority)
 	{
 		APickupGun* PickupToDrop = GetWorld()->SpawnActorDeferred<APickupGun>(Gun->WeaponPickup, GetPickupSpawnTransform());
+		PickupToDrop->bDropByPlayer = true;
 		PickupToDrop->CurrentAmmoInClip = Gun->CurrentAmmo;
 		PickupToDrop->CurrentSpareAmmo = Gun->CurrentBagAmmo;
 		UGameplayStatics::FinishSpawningActor(PickupToDrop, GetPickupSpawnTransform());
@@ -192,7 +192,7 @@ void ABattleRoyaleCharacter::OnFire()
 	{
 		ServerFire();
 	}
-	if (Gun->HasAmmo() && !Reloading)
+	if (Gun && Gun->HasAmmo() && !Reloading)
 	{
 		SetupFire();
 	}
@@ -253,7 +253,7 @@ void ABattleRoyaleCharacter::HandleTakeDamage(AActor* DamagedActor, float Damage
 	if (DamagedActor == DamageCauser) return;
 
 	ModifyHealth(Damage);
-	UE_LOG(LogTemp, Warning, TEXT("Health : %f"), Health)
+
 	if (Health <= 0)
 	{
 		ABattleRoyaleCharacter* Killer = Cast<ABattleRoyaleCharacter>(DamageCauser);
@@ -274,7 +274,6 @@ void ABattleRoyaleCharacter::KilledByPlayer(class ABattleRoyaleCharacter* Killer
 	{
 		KilledBy = Killer;
 		OnRep_KilledBy();
-		UE_LOG(LogTemp, Warning, TEXT("By Player : %s"), *KilledBy->GetName())
 	}
 }
 
