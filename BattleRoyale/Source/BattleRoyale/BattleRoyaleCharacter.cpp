@@ -179,7 +179,7 @@ FTransform ABattleRoyaleCharacter::GetPickupSpawnTransform()
 
 	FVector EyeLocation;
 	FRotator EyeRotation;
-	GetController()->GetActorEyesViewPoint(EyeLocation, EyeRotation);
+	GetActorEyesViewPoint(EyeLocation, EyeRotation);
 
 	FVector LookDirection = EyeRotation.Vector();
 	FVector Location = EyeLocation + (LookDirection * 200);
