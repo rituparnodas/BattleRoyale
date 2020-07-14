@@ -60,7 +60,7 @@ public:
 	void OnRep_Gun();
 
 	UFUNCTION(BlueprintCallable, Category = "Weapon")
-		void GiveWeapon(UClass* GunToGive);
+		void GiveWeapon(UClass* GunToGive, int32 CurrentAmmo, int32 CurrentBagAmmo);
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon")
 	TSubclassOf<class AGunBase> GunClass;

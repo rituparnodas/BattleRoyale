@@ -54,7 +54,7 @@ void ABattleRoyaleCharacter::BeginPlay()
 
 	if (GunClass)
 	{
-		GiveWeapon(GunClass);
+		GiveWeapon(GunClass, 5, 5);
 	}
 }
 
@@ -95,7 +95,7 @@ void ABattleRoyaleCharacter::Loot()
 
 	if (CurrentGunPickup)
 	{
-		GiveWeapon(CurrentGunPickup->WeaponToGive);
+		GiveWeapon(CurrentGunPickup->WeaponToGive, CurrentGunPickup->CurrentAmmoInClip, CurrentGunPickup->CurrentSpareAmmo);
 		CurrentGunPickup->Destroy();
 	}
 }
@@ -114,15 +114,16 @@ void ABattleRoyaleCharacter::OnRep_Gun()
 	}
 }
 
-void ABattleRoyaleCharacter::GiveWeapon(UClass* GunToGive)
+void ABattleRoyaleCharacter::GiveWeapon(UClass* GunToGive, int32 CurrentAmmo, int32 CurrentBagAmmo)
 {
 	if (GetLocalRole() == ROLE_Authority)
 	{
 		if (!Gun)
 		{
-			FActorSpawnParameters SpawnParams;
-			SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
-			Gun = GetWorld()->SpawnActor<AGunBase>(GunToGive, GetActorTransform(), SpawnParams);
+			Gun = GetWorld()->SpawnActorDeferred<AGunBase>(GunToGive, GetActorTransform());
+			Gun->CurrentAmmo = CurrentAmmo;
+			Gun->CurrentBagAmmo = CurrentBagAmmo;
+			UGameplayStatics::FinishSpawningActor(Gun, GetActorTransform());
 			if (Gun)
 			{
 				Gun->SetOwner(this);
@@ -134,9 +135,10 @@ void ABattleRoyaleCharacter::GiveWeapon(UClass* GunToGive)
 		{
 			DropCurrentWeapon();
 
-			FActorSpawnParameters SpawnParams;
-			SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
-			Gun = GetWorld()->SpawnActor<AGunBase>(GunToGive, GetActorTransform(), SpawnParams);
+			Gun = GetWorld()->SpawnActorDeferred<AGunBase>(GunToGive, GetActorTransform());
+			Gun->CurrentAmmo = CurrentAmmo;
+			Gun->CurrentBagAmmo = CurrentBagAmmo;
+			UGameplayStatics::FinishSpawningActor(Gun, GetActorTransform());
 			if (Gun)
 			{
 				Gun->SetOwner(this);
