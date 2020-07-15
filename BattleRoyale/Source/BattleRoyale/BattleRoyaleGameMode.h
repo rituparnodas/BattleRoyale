@@ -13,7 +13,15 @@ class ABattleRoyaleGameMode : public AGameModeBase
 
 public:
 	ABattleRoyaleGameMode();
+
+	UFUNCTION(BlueprintCallable)
+	void OnGameStart();
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Players")
+	TArray<class ABRPlayerController*> PlayerControllerList;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Players")
+		TArray<class ABRPlayerController*> AlivePlayerControllerList;
+
+	virtual void PostLogin(APlayerController* NewPlayer);
 };
-
-
-
