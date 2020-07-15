@@ -23,5 +23,5 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Players")
 		TArray<class ABRPlayerController*> AlivePlayerControllerList;
 
-	virtual void PostLogin(APlayerController* NewPlayer);
+	void PostLogin(APlayerController* NewPlayer) override;
 };
