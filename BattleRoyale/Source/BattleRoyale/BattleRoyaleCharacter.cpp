@@ -94,7 +94,14 @@ void ABattleRoyaleCharacter::Loot()
 		ServerLoot();
 	}
 
-	if (CurrentGunPickup)
+	ABRPlayerController* PC = Cast<ABRPlayerController>(GetController());
+
+	if (PC && PC->bIsOnPlane)
+	{
+		PC->bIsOnPlane = false;
+		PC->DropFromPlane();
+	}
+	else if	(CurrentGunPickup)
 	{
 		GiveWeapon(CurrentGunPickup->WeaponToGive, CurrentGunPickup->CurrentAmmoInClip, CurrentGunPickup->CurrentSpareAmmo);
 		CurrentGunPickup->Destroy();
@@ -316,6 +323,12 @@ void ABattleRoyaleCharacter::ModifyHealth(float HealthDelta)
 	}
 }
 
+void ABattleRoyaleCharacter::SetFlying(bool bIsFlying)
+{
+	bFlying = bIsFlying;
+	UpdateMovement();
+}
+
 void ABattleRoyaleCharacter::OnRep_Health(){}
 
 bool ABattleRoyaleCharacter::ServerFire_Validate(){ return true; }
@@ -331,6 +344,7 @@ void ABattleRoyaleCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty
 	DOREPLIFETIME(ABattleRoyaleCharacter, Health);
 	DOREPLIFETIME(ABattleRoyaleCharacter, Reloading);
 	DOREPLIFETIME_CONDITION(ABattleRoyaleCharacter, CurrentGunPickup,COND_OwnerOnly);
+	DOREPLIFETIME(ABattleRoyaleCharacter, bFlying);
 }
 
 /*=============================================================================================*/

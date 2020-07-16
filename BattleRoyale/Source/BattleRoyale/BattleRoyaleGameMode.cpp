@@ -24,12 +24,13 @@ void ABattleRoyaleGameMode::OnGameStart()
 	{
 		if (PlayerController)
 		{
-			PlayerController->bIsOnPlane = true;
 			ABRGameStateBase* GS = Cast<ABRGameStateBase>(GetWorld()->GetGameState());
 			if (GS && GS->AirPlane)
 			{
+				PlayerController->bIsOnPlane = true;
+				PlayerController->OnRep_IsOnPlane();
 				PlayerController->SetViewTargetWithBlend(GS->AirPlane, 1.f, EViewTargetBlendFunction::VTBlend_Cubic);
-				PlayerController->OnGameBegun(); // TO Add Some HUD
+				PlayerController->OnGameBegun(); // TO Add Some HUD	
 			}
 		}
 	}

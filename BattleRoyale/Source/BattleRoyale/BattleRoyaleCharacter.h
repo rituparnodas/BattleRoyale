@@ -145,6 +145,20 @@ protected:
 	UFUNCTION(Server, Reliable, WithValidation)
 	void ServerLoot();
 
+public:
+
+	//*****************************************Flying****************************************
+	UFUNCTION(BlueprintCallable)
+	void SetFlying(bool bIsFlying);
+
+	UPROPERTY(EditAnywhere, Replicated, BlueprintReadWrite, Category = "Movement")
+	bool bFlying;
+
+	UFUNCTION(BlueprintImplementableEvent)
+	void UpdateMovement();
+
+protected:
+
 	//========================================================================================
 	void MoveForward(float Val);
 	void MoveRight(float Val);
