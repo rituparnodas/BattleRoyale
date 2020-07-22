@@ -15,6 +15,7 @@
 #include "DrawDebugHelpers.h"
 #include "PickupGun.h"
 #include "BRPlayerController.h"
+#include "Particles/ParticleSystemComponent.h"
 
 DEFINE_LOG_CATEGORY_STATIC(LogFPChar, Warning, All);
 
@@ -55,7 +56,7 @@ void ABattleRoyaleCharacter::BeginPlay()
 
 	if (GunClass)
 	{
-		GiveWeapon(GunClass, 5, 5);
+		GiveWeapon(GunClass, 30, 50);
 	}
 }
 
@@ -225,10 +226,15 @@ void ABattleRoyaleCharacter::SetupFire()
 	QueryParams.bReturnPhysicalMaterial = true;
 
 	FHitResult Hit;
-	if (GetWorld()->LineTraceSingleByChannel(Hit, EyeLocation, TraceEnd, ECollisionChannel::ECC_Visibility, QueryParams))
-	{
-		DrawDebugLine(GetWorld(), EyeLocation, TraceEnd, FColor::Magenta, false, 10.f, 0, 1.0f);
+	bool bLineTraceSuccess = GetWorld()->LineTraceSingleByChannel(Hit, EyeLocation, TraceEnd, ECollisionChannel::ECC_Visibility, QueryParams);
 
+	UParticleSystemComponent* FPSMuzzleFX = UGameplayStatics::SpawnEmitterAttached(MuzzleFX, Gun->FirstPersonGun, "Muzzle");
+	UParticleSystemComponent* TPPMuzzleFX = UGameplayStatics::SpawnEmitterAttached(MuzzleFX, Gun->ThirdPersonGun, "Muzzle");
+	FPSMuzzleFX->SetOnlyOwnerSee(true);
+	TPPMuzzleFX->SetOwnerNoSee(true);
+
+	if (bLineTraceSuccess)
+	{
 		HitActor = Hit.GetActor();
 		Victim = Cast<ABattleRoyaleCharacter>(HitActor);
 		if (GetLocalRole() == ROLE_Authority)

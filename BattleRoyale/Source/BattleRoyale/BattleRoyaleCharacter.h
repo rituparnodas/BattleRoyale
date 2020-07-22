@@ -138,6 +138,10 @@ protected:
 	UFUNCTION(BlueprintCallable)
 		void HandleLocalDeath();
 	
+	//***************************************ParticleSystem**********************************
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "FX")
+		class UParticleSystem* MuzzleFX;
+
 
 	//******************************************Loot*****************************************
 	void Loot();
