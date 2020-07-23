@@ -71,6 +71,7 @@ void ABattleRoyaleCharacter::SetupPlayerInputComponent(class UInputComponent* Pl
 
 	// Bind fire event
 	PlayerInputComponent->BindAction("Fire", IE_Pressed, this, &ABattleRoyaleCharacter::OnFire);
+	PlayerInputComponent->BindAction("Fire", IE_Released, this, &ABattleRoyaleCharacter::StopFire);
 
 	// Loot
 	PlayerInputComponent->BindAction("Loot", IE_Pressed, this, &ABattleRoyaleCharacter::Loot);
@@ -228,10 +229,8 @@ void ABattleRoyaleCharacter::SetupFire()
 	FHitResult Hit;
 	bool bLineTraceSuccess = GetWorld()->LineTraceSingleByChannel(Hit, EyeLocation, TraceEnd, ECollisionChannel::ECC_Visibility, QueryParams);
 
-	UParticleSystemComponent* FPSMuzzleFX = UGameplayStatics::SpawnEmitterAttached(MuzzleFX, Gun->FirstPersonGun, "Muzzle");
-	UParticleSystemComponent* TPPMuzzleFX = UGameplayStatics::SpawnEmitterAttached(MuzzleFX, Gun->ThirdPersonGun, "Muzzle");
-	FPSMuzzleFX->SetOnlyOwnerSee(true);
-	TPPMuzzleFX->SetOwnerNoSee(true);
+	bJustFired = true;
+	PlayFireEffects(); // TODO Fix
 
 	if (bLineTraceSuccess)
 	{
@@ -251,6 +250,29 @@ void ABattleRoyaleCharacter::SetupFire()
 void ABattleRoyaleCharacter::ServerFire_Implementation()
 {
 	OnFire();
+}
+
+void ABattleRoyaleCharacter::PlayFireEffects()
+{
+	UParticleSystemComponent* FPSMuzzleFX = UGameplayStatics::SpawnEmitterAttached(MuzzleFX, Gun->FirstPersonGun, "Muzzle");
+	if (!FPSMuzzleFX) return;
+	UParticleSystemComponent* TPPMuzzleFX = UGameplayStatics::SpawnEmitterAttached(MuzzleFX, Gun->ThirdPersonGun, "Muzzle");
+	if (!TPPMuzzleFX) return;
+	FPSMuzzleFX->SetOnlyOwnerSee(true);
+	TPPMuzzleFX->SetOwnerNoSee(true);
+}
+
+void ABattleRoyaleCharacter::OnRep_JustFired()
+{
+	if (bJustFired)
+	{
+		PlayFireEffects();
+	}
+}
+
+void ABattleRoyaleCharacter::StopFire()
+{
+	bJustFired = false;
 }
 
 void ABattleRoyaleCharacter::OnRep_KilledBy()
@@ -350,7 +372,8 @@ void ABattleRoyaleCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty
 	DOREPLIFETIME(ABattleRoyaleCharacter, Health);
 	DOREPLIFETIME(ABattleRoyaleCharacter, Reloading);
 	DOREPLIFETIME_CONDITION(ABattleRoyaleCharacter, CurrentGunPickup,COND_OwnerOnly);
-	DOREPLIFETIME(ABattleRoyaleCharacter, bFlying);
+	DOREPLIFETIME(ABattleRoyaleCharacter, bFlying); 
+	DOREPLIFETIME(ABattleRoyaleCharacter, bJustFired);
 }
 
 /*=============================================================================================*/

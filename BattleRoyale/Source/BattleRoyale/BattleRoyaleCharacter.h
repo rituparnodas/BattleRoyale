@@ -99,10 +99,25 @@ public:
 	UFUNCTION(BlueprintCallable)
 		void ModifyHealth(float HealthDelta);
 
+	//***************************************ParticleSystem**********************************
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "FX")
+		class UParticleSystem* MuzzleFX;
+
+	UFUNCTION(BlueprintCallable)
+		void PlayFireEffects();
+
+	UPROPERTY(VisibleAnywhere, ReplicatedUsing=OnRep_JustFired, BlueprintReadWrite, Category = "Firing")
+		bool bJustFired;
+
+	UFUNCTION()
+		void OnRep_JustFired();
+
 protected:
 	
 	/** Fires a projectile. */
 	void OnFire();
+
+	void StopFire();
 
 	void SetupFire();
 
@@ -137,11 +152,6 @@ protected:
 
 	UFUNCTION(BlueprintCallable)
 		void HandleLocalDeath();
-	
-	//***************************************ParticleSystem**********************************
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "FX")
-		class UParticleSystem* MuzzleFX;
-
 
 	//******************************************Loot*****************************************
 	void Loot();
