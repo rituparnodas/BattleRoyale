@@ -99,6 +99,17 @@ public:
 	UFUNCTION(BlueprintCallable)
 		void ModifyHealth(float HealthDelta);
 
+	//*****************************ZoneEffect*************************************
+
+	UPROPERTY(VisibleAnywhere, ReplicatedUsing=OnRep_PlayerOutsideZone, BlueprintReadWrite, Category = "SafeZone")
+		bool bPlayerOutsideZone;
+
+	UFUNCTION()
+		void OnRep_PlayerOutsideZone();
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ZoneEffect")
+		class UPostProcessComponent* PostProcessComp;
+
 	//***************************************ParticleSystem**********************************
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "FX")
 		class UParticleSystem* MuzzleFX;

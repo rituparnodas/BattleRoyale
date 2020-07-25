@@ -16,6 +16,7 @@
 #include "PickupGun.h"
 #include "BRPlayerController.h"
 #include "Particles/ParticleSystemComponent.h"
+#include "Components/PostProcessComponent.h"
 
 DEFINE_LOG_CATEGORY_STATIC(LogFPChar, Warning, All);
 
@@ -42,6 +43,9 @@ ABattleRoyaleCharacter::ABattleRoyaleCharacter()
 	Mesh1P->CastShadow = false;
 	Mesh1P->SetRelativeRotation(FRotator(1.9f, -19.19f, 5.2f));
 	Mesh1P->SetRelativeLocation(FVector(-0.5f, -4.4f, -155.7f));
+
+	PostProcessComp = CreateDefaultSubobject<UPostProcessComponent>(FName("PostProcessComp"));
+	PostProcessComp->AttachTo(RootComponent);
 }
 
 void ABattleRoyaleCharacter::BeginPlay()
@@ -254,6 +258,8 @@ void ABattleRoyaleCharacter::ServerFire_Implementation()
 
 void ABattleRoyaleCharacter::PlayFireEffects()
 {
+	if (!Gun) return;
+
 	UParticleSystemComponent* FPSMuzzleFX = UGameplayStatics::SpawnEmitterAttached(MuzzleFX, Gun->FirstPersonGun, "Muzzle");
 	if (!FPSMuzzleFX) return;
 	UParticleSystemComponent* TPPMuzzleFX = UGameplayStatics::SpawnEmitterAttached(MuzzleFX, Gun->ThirdPersonGun, "Muzzle");
@@ -351,6 +357,21 @@ void ABattleRoyaleCharacter::ModifyHealth(float HealthDelta)
 	}
 }
 
+void ABattleRoyaleCharacter::OnRep_PlayerOutsideZone()
+{
+	if (IsLocallyControlled())
+	{
+		if (bPlayerOutsideZone)
+		{
+			PostProcessComp->bEnabled = true;
+		}
+		else
+		{
+			PostProcessComp->bEnabled = false;
+		}
+	}
+}
+
 void ABattleRoyaleCharacter::SetFlying(bool bIsFlying)
 {
 	bFlying = bIsFlying;
@@ -373,7 +394,8 @@ void ABattleRoyaleCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty
 	DOREPLIFETIME(ABattleRoyaleCharacter, Reloading);
 	DOREPLIFETIME_CONDITION(ABattleRoyaleCharacter, CurrentGunPickup,COND_OwnerOnly);
 	DOREPLIFETIME(ABattleRoyaleCharacter, bFlying); 
-	DOREPLIFETIME(ABattleRoyaleCharacter, bJustFired);
+	DOREPLIFETIME(ABattleRoyaleCharacter, bJustFired); 
+	DOREPLIFETIME(ABattleRoyaleCharacter, bPlayerOutsideZone);
 }
 
 /*=============================================================================================*/
