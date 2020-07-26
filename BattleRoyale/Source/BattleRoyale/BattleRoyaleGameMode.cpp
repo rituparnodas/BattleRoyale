@@ -59,32 +59,28 @@ void ABattleRoyaleGameMode::PostLogin(APlayerController* NewPlayer)
 
 void ABattleRoyaleGameMode::PlayerDied(ABattleRoyaleCharacter* DeadPlayer)
 {
-	if (HasAuthority())
+	if (GetLocalRole() == ROLE_Authority)
 	{
 		ABRPlayerState* PS = Cast<ABRPlayerState>(DeadPlayer->GetPlayerState());
-		if (PS)
+		if (!PS) return;
+		PS->Placing = AlivePlayerControllerList.Num();
+
+		ABRPlayerController* PlayerController = Cast<ABRPlayerController>(DeadPlayer->GetController());
+		if (!PlayerController) return;
+		AlivePlayerControllerList.Remove(PlayerController);
+
+		ABRGameStateBase* GS = Cast<ABRGameStateBase>(GetWorld()->GetGameState());
+		if (!GS) return;
+		GS->PlayerLeftAlive = AlivePlayerControllerList.Num();
+		if (AlivePlayerControllerList.Num() <= 1)
 		{
-			PS->Placing = AlivePlayerControllerList.Num();
-			ABRPlayerController* PlayerController = Cast<ABRPlayerController>(DeadPlayer->GetController());
-			if (PlayerController)
+			ABattleRoyaleCharacter* Character = Cast<ABattleRoyaleCharacter>(AlivePlayerControllerList.Last()->GetPawn());
+			if (Character)
 			{
-				AlivePlayerControllerList.Remove(PlayerController);
-				ABRGameStateBase* GS = Cast<ABRGameStateBase>(GetWorld()->GetGameState());
-				if (GS)
+				ABRPlayerState* WinnerPlayerState = Cast<ABRPlayerState>(Character->GetPlayerState());
+				if (WinnerPlayerState)
 				{
-					GS->PlayerLeftAlive = AlivePlayerControllerList.Num();
-					if (AlivePlayerControllerList.Num() <= 1)
-					{
-						ABattleRoyaleCharacter* Character = Cast<ABattleRoyaleCharacter>(AlivePlayerControllerList.Last());
-						if (Character)
-						{
-							ABRPlayerState* WinnerPlayerState =  Cast<ABRPlayerState>(Character->GetPlayerState());
-							if (WinnerPlayerState)
-							{
-								WinnerFound(WinnerPlayerState);
-							}
-						}
-					}
+					WinnerFound(WinnerPlayerState);
 				}
 			}
 		}
@@ -100,7 +96,7 @@ void ABattleRoyaleGameMode::WinnerFound(ABRPlayerState* Winner)
 	ABRGameStateBase* GS = Cast<ABRGameStateBase>(GetWorld()->GetGameState());
 	if (GS)
 	{
-		//GS->OnGameOver();
-		//GS->OnRep_GameOver();
+		GS->OnGameOver();
+		GS->OnRep_GameOver();
 	}
 }

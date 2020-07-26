@@ -18,6 +18,7 @@
 #include "Particles/ParticleSystemComponent.h"
 #include "Components/PostProcessComponent.h"
 #include "BattleRoyaleGameMode.h"
+#include "BRPlayerState.h"
 
 DEFINE_LOG_CATEGORY_STATIC(LogFPChar, Warning, All);
 
@@ -52,8 +53,6 @@ ABattleRoyaleCharacter::ABattleRoyaleCharacter()
 void ABattleRoyaleCharacter::ReceivePossessed(AController* NewController)
 {
 	//Super::ReceivePossessed(NewController);
-
-
 }
 
 void ABattleRoyaleCharacter::BeginPlay()
@@ -63,15 +62,7 @@ void ABattleRoyaleCharacter::BeginPlay()
 	if (GetLocalRole() == ROLE_Authority)
 	{
 		OnTakeAnyDamage.AddDynamic(this, &ABattleRoyaleCharacter::HandleTakeDamage);
-		//Health = StartingHealth;
-	}
-
-	MyPlayerControllerRef = Cast<ABRPlayerController>(GetController());
-	if (!MyPlayerControllerRef) return;
-	if (GetLocalRole() == ROLE_Authority)
-	{
 		Health = StartingHealth;
-		UE_LOG(LogTemp, Warning, TEXT("Possessed Called, Health : %f"), Health)
 	}
 }
 
@@ -310,6 +301,14 @@ void ABattleRoyaleCharacter::OnRep_KilledBy()
 		GetMesh()->SetSimulatePhysics(true);
 		GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	}
+	if (KilledBy)
+	{
+		ABRPlayerState* PS = Cast<ABRPlayerState>(KilledBy->GetPlayerState());
+		if (PS)
+		{
+			PS->Kills++;
+		}
+	}
 }
 
 void ABattleRoyaleCharacter::HandleTakeDamage(AActor* DamagedActor, float Damage,
@@ -337,20 +336,6 @@ void ABattleRoyaleCharacter::HandleTakeDamage(AActor* DamagedActor, float Damage
 		else
 		{
 			KilledByEnvironment(DamageCauser);
-			ABattleRoyaleGameMode* GM = Cast<ABattleRoyaleGameMode>(GetWorld()->GetAuthGameMode());
-			if (GM)
-			{
-				if (!MyPlayerControllerRef) 
-				{
-					UE_LOG(LogTemp,Warning, TEXT("Null PlayerController Reference"))
-					return;
-				}
-				ABattleRoyaleCharacter* DiedPlayer = Cast<ABattleRoyaleCharacter>(MyPlayerControllerRef->GetPawn());
-				if (DiedPlayer)
-				{
-					GM->PlayerDied(DiedPlayer);
-				}
-			}
 		}
 	}
 }
@@ -385,8 +370,19 @@ void ABattleRoyaleCharacter::KilledByPlayer(class ABattleRoyaleCharacter* Killer
 
 void ABattleRoyaleCharacter::KilledByEnvironment(AActor* EnvActor)
 {
-	UE_LOG(LogTemp, Warning, TEXT("By Zone"))
 	HandleLocalDeath();
+
+	ABattleRoyaleGameMode* GM = Cast<ABattleRoyaleGameMode>(GetWorld()->GetAuthGameMode());
+	if (GM)
+	{
+		if (!MyPlayerControllerRef) return;
+		ABattleRoyaleCharacter* DiedPlayer = Cast<ABattleRoyaleCharacter>(MyPlayerControllerRef->GetPawn());
+		if (DiedPlayer)
+		{
+			UE_LOG(LogTemp, Error, TEXT("DiedPlayer Not NULL"))
+			GM->PlayerDied(DiedPlayer);
+		}
+	}
 }
 
 void ABattleRoyaleCharacter::ModifyHealth(float HealthDelta)
