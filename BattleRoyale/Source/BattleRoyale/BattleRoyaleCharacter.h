@@ -27,6 +27,11 @@ public:
 public:
 	ABattleRoyaleCharacter();
 
+	void ReceivePossessed(AController* NewController);
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
+	class ABRPlayerController* MyPlayerControllerRef;
+
 protected:
 	virtual void BeginPlay();
 

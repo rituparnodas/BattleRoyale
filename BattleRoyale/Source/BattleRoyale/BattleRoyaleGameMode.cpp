@@ -6,6 +6,7 @@
 #include "UObject/ConstructorHelpers.h"
 #include "BRPlayerController.h"
 #include "BRGameStateBase.h"
+#include "BRPlayerState.h"
 
 ABattleRoyaleGameMode::ABattleRoyaleGameMode()
 	: Super()
@@ -53,5 +54,53 @@ void ABattleRoyaleGameMode::PostLogin(APlayerController* NewPlayer)
 				GS->PlayerLeftAlive = AlivePlayerControllerList.Num();
 			}
 		}
+	}
+}
+
+void ABattleRoyaleGameMode::PlayerDied(ABattleRoyaleCharacter* DeadPlayer)
+{
+	if (HasAuthority())
+	{
+		ABRPlayerState* PS = Cast<ABRPlayerState>(DeadPlayer->GetPlayerState());
+		if (PS)
+		{
+			PS->Placing = AlivePlayerControllerList.Num();
+			ABRPlayerController* PlayerController = Cast<ABRPlayerController>(DeadPlayer->GetController());
+			if (PlayerController)
+			{
+				AlivePlayerControllerList.Remove(PlayerController);
+				ABRGameStateBase* GS = Cast<ABRGameStateBase>(GetWorld()->GetGameState());
+				if (GS)
+				{
+					GS->PlayerLeftAlive = AlivePlayerControllerList.Num();
+					if (AlivePlayerControllerList.Num() <= 1)
+					{
+						ABattleRoyaleCharacter* Character = Cast<ABattleRoyaleCharacter>(AlivePlayerControllerList.Last());
+						if (Character)
+						{
+							ABRPlayerState* WinnerPlayerState =  Cast<ABRPlayerState>(Character->GetPlayerState());
+							if (WinnerPlayerState)
+							{
+								WinnerFound(WinnerPlayerState);
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+}
+
+void ABattleRoyaleGameMode::WinnerFound(ABRPlayerState* Winner)
+{
+	if (!Winner) return;
+
+	Winner->Placing = 1;
+
+	ABRGameStateBase* GS = Cast<ABRGameStateBase>(GetWorld()->GetGameState());
+	if (GS)
+	{
+		//GS->OnGameOver();
+		//GS->OnRep_GameOver();
 	}
 }

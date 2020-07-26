@@ -17,6 +17,7 @@
 #include "BRPlayerController.h"
 #include "Particles/ParticleSystemComponent.h"
 #include "Components/PostProcessComponent.h"
+#include "BattleRoyaleGameMode.h"
 
 DEFINE_LOG_CATEGORY_STATIC(LogFPChar, Warning, All);
 
@@ -48,6 +49,13 @@ ABattleRoyaleCharacter::ABattleRoyaleCharacter()
 	PostProcessComp->AttachTo(RootComponent);
 }
 
+void ABattleRoyaleCharacter::ReceivePossessed(AController* NewController)
+{
+	//Super::ReceivePossessed(NewController);
+
+
+}
+
 void ABattleRoyaleCharacter::BeginPlay()
 {
 	Super::BeginPlay();
@@ -55,12 +63,15 @@ void ABattleRoyaleCharacter::BeginPlay()
 	if (GetLocalRole() == ROLE_Authority)
 	{
 		OnTakeAnyDamage.AddDynamic(this, &ABattleRoyaleCharacter::HandleTakeDamage);
-		Health = StartingHealth;
+		//Health = StartingHealth;
 	}
 
-	if (GunClass)
+	MyPlayerControllerRef = Cast<ABRPlayerController>(GetController());
+	if (!MyPlayerControllerRef) return;
+	if (GetLocalRole() == ROLE_Authority)
 	{
-		GiveWeapon(GunClass, 30, 50);
+		Health = StartingHealth;
+		UE_LOG(LogTemp, Warning, TEXT("Possessed Called, Health : %f"), Health)
 	}
 }
 
@@ -176,6 +187,7 @@ void ABattleRoyaleCharacter::DropCurrentWeapon()
 {
 	if (GetLocalRole() == ROLE_Authority)
 	{
+		if (!Gun) return;
 		APickupGun* PickupToDrop = GetWorld()->SpawnActorDeferred<APickupGun>(Gun->WeaponPickup, GetPickupSpawnTransform());
 		PickupToDrop->bDropByPlayer = true;
 		PickupToDrop->CurrentAmmoInClip = Gun->CurrentAmmo;
@@ -313,25 +325,52 @@ void ABattleRoyaleCharacter::HandleTakeDamage(AActor* DamagedActor, float Damage
 		if (Killer)
 		{
 			KilledByPlayer(Killer);
+			ABattleRoyaleGameMode* GM = Cast<ABattleRoyaleGameMode>(GetWorld()->GetAuthGameMode());
+			if (GM)
+			{
+				if (!MyPlayerControllerRef) return;
+				ABattleRoyaleCharacter* DiedPlayer = Cast<ABattleRoyaleCharacter>(MyPlayerControllerRef->GetPawn());
+				if (!DiedPlayer) return;
+				GM->PlayerDied(DiedPlayer);
+			}
 		}
 		else
 		{
-			KilledByEnvironment(DamageCauser); // TODO Set As Safe Zone
+			KilledByEnvironment(DamageCauser);
+			ABattleRoyaleGameMode* GM = Cast<ABattleRoyaleGameMode>(GetWorld()->GetAuthGameMode());
+			if (GM)
+			{
+				if (!MyPlayerControllerRef) 
+				{
+					UE_LOG(LogTemp,Warning, TEXT("Null PlayerController Reference"))
+					return;
+				}
+				ABattleRoyaleCharacter* DiedPlayer = Cast<ABattleRoyaleCharacter>(MyPlayerControllerRef->GetPawn());
+				if (DiedPlayer)
+				{
+					GM->PlayerDied(DiedPlayer);
+				}
+			}
 		}
 	}
 }
 
 void ABattleRoyaleCharacter::HandleLocalDeath()
 {
-	//GetMesh1P()->SetCollisionEnabled(ECollisionEnabled::PhysicsOnly);
-	//GetMesh1P()->SetSimulatePhysics(true);
-
 	ABRPlayerController* PC = Cast<ABRPlayerController>(GetController());
-	if (PC && KilledBy)
+	if (PC)
 	{
-		PC->BeginSpectating(KilledBy);
-		GetMesh()->SetOwnerNoSee(false);
-		GetMesh1P()->SetOwnerNoSee(true);
+		if (KilledBy)
+		{
+			PC->BeginSpectating(KilledBy);
+			GetMesh()->SetOwnerNoSee(false);
+			GetMesh1P()->SetOwnerNoSee(true);
+		}
+		else
+		{
+			GetMesh()->SetOwnerNoSee(false);
+			GetMesh1P()->SetOwnerNoSee(true);
+		}
 	}
 }
 
@@ -347,6 +386,7 @@ void ABattleRoyaleCharacter::KilledByPlayer(class ABattleRoyaleCharacter* Killer
 void ABattleRoyaleCharacter::KilledByEnvironment(AActor* EnvActor)
 {
 	UE_LOG(LogTemp, Warning, TEXT("By Zone"))
+	HandleLocalDeath();
 }
 
 void ABattleRoyaleCharacter::ModifyHealth(float HealthDelta)

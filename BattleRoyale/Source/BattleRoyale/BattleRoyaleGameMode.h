@@ -24,4 +24,10 @@ public:
 		TArray<class ABRPlayerController*> AlivePlayerControllerList;
 
 	void PostLogin(APlayerController* NewPlayer) override;
+
+	UFUNCTION(BlueprintCallable)
+	void PlayerDied(class ABattleRoyaleCharacter* DeadPlayer);
+
+	UFUNCTION(BlueprintCallable)
+		void WinnerFound(class ABRPlayerState* Winner);
 };
