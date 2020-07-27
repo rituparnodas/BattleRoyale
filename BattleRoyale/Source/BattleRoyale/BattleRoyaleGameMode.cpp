@@ -44,44 +44,44 @@ void ABattleRoyaleGameMode::PostLogin(APlayerController* NewPlayer)
 	ABRGameStateBase* GS = Cast<ABRGameStateBase>(GetWorld()->GetGameState());
 	if (GS)
 	{
-		if (!GS->bGameStarted)
+		ABRPlayerController* PlayerController = Cast<ABRPlayerController>(NewPlayer);
+		if (PlayerController)
 		{
-			ABRPlayerController* PlayerController = Cast<ABRPlayerController>(NewPlayer);
-			if (PlayerController)
+			if (!GS->bGameStarted)
 			{
 				PlayerControllerList.Add(PlayerController);
 				AlivePlayerControllerList.Add(PlayerController);
 				GS->PlayerLeftAlive = AlivePlayerControllerList.Num();
 			}
+			else
+			{
+				ABRPlayerState* PS = Cast<ABRPlayerState>(PlayerController->PlayerState);
+				PS->Placing = AlivePlayerControllerList.Num();
+			}
 		}
 	}
 }
 
-void ABattleRoyaleGameMode::PlayerDied(ABattleRoyaleCharacter* DeadPlayer)
+void ABattleRoyaleGameMode::PlayerDied(ABRPlayerController* DeadPlayerController)
 {
 	if (GetLocalRole() == ROLE_Authority)
 	{
-		ABRPlayerState* PS = Cast<ABRPlayerState>(DeadPlayer->GetPlayerState());
+		if (!DeadPlayerController) return;
+		ABRPlayerState* PS = Cast<ABRPlayerState>(DeadPlayerController->PlayerState);
 		if (!PS) return;
 		PS->Placing = AlivePlayerControllerList.Num();
 
-		ABRPlayerController* PlayerController = Cast<ABRPlayerController>(DeadPlayer->GetController());
-		if (!PlayerController) return;
-		AlivePlayerControllerList.Remove(PlayerController);
+		AlivePlayerControllerList.Remove(DeadPlayerController);
 
 		ABRGameStateBase* GS = Cast<ABRGameStateBase>(GetWorld()->GetGameState());
 		if (!GS) return;
 		GS->PlayerLeftAlive = AlivePlayerControllerList.Num();
 		if (AlivePlayerControllerList.Num() <= 1)
 		{
-			ABattleRoyaleCharacter* Character = Cast<ABattleRoyaleCharacter>(AlivePlayerControllerList.Last()->GetPawn());
-			if (Character)
+			ABRPlayerState* WinnerPlayerState = Cast<ABRPlayerState>(AlivePlayerControllerList.Last()->PlayerState);
+			if (WinnerPlayerState)
 			{
-				ABRPlayerState* WinnerPlayerState = Cast<ABRPlayerState>(Character->GetPlayerState());
-				if (WinnerPlayerState)
-				{
-					WinnerFound(WinnerPlayerState);
-				}
+				WinnerFound(WinnerPlayerState);
 			}
 		}
 	}
@@ -90,7 +90,6 @@ void ABattleRoyaleGameMode::PlayerDied(ABattleRoyaleCharacter* DeadPlayer)
 void ABattleRoyaleGameMode::WinnerFound(ABRPlayerState* Winner)
 {
 	if (!Winner) return;
-
 	Winner->Placing = 1;
 
 	ABRGameStateBase* GS = Cast<ABRGameStateBase>(GetWorld()->GetGameState());

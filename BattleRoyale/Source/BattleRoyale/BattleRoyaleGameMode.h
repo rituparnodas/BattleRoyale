@@ -26,7 +26,7 @@ public:
 	void PostLogin(APlayerController* NewPlayer) override;
 
 	UFUNCTION(BlueprintCallable)
-	void PlayerDied(class ABattleRoyaleCharacter* DeadPlayer);
+	void PlayerDied(class ABRPlayerController* DeadPlayerController);
 
 	UFUNCTION(BlueprintCallable)
 		void WinnerFound(class ABRPlayerState* Winner);

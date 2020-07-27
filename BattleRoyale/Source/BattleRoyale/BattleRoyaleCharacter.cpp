@@ -314,6 +314,12 @@ void ABattleRoyaleCharacter::OnRep_KilledBy()
 void ABattleRoyaleCharacter::HandleTakeDamage(AActor* DamagedActor, float Damage,
 	const UDamageType* DamageType, AController* InstigatedBy, AActor* DamageCauser)
 {
+	ABattleRoyaleGameMode* GameMode = Cast<ABattleRoyaleGameMode>(GetWorld()->GetAuthGameMode());
+	if (GameMode && GameMode->AlivePlayerControllerList.Num() <= 1)
+	{
+		return;
+	}
+
 	if (DamagedActor == DamageCauser) return;
 
 	ModifyHealth(Damage);
@@ -328,9 +334,7 @@ void ABattleRoyaleCharacter::HandleTakeDamage(AActor* DamagedActor, float Damage
 			if (GM)
 			{
 				if (!MyPlayerControllerRef) return;
-				ABattleRoyaleCharacter* DiedPlayer = Cast<ABattleRoyaleCharacter>(MyPlayerControllerRef->GetPawn());
-				if (!DiedPlayer) return;
-				GM->PlayerDied(DiedPlayer);
+				GM->PlayerDied(MyPlayerControllerRef);
 			}
 		}
 		else
@@ -345,17 +349,9 @@ void ABattleRoyaleCharacter::HandleLocalDeath()
 	ABRPlayerController* PC = Cast<ABRPlayerController>(GetController());
 	if (PC)
 	{
-		if (KilledBy)
-		{
-			PC->BeginSpectating(KilledBy);
-			GetMesh()->SetOwnerNoSee(false);
-			GetMesh1P()->SetOwnerNoSee(true);
-		}
-		else
-		{
-			GetMesh()->SetOwnerNoSee(false);
-			GetMesh1P()->SetOwnerNoSee(true);
-		}
+		PC->BeginSpectating(KilledBy);
+		GetMesh()->SetOwnerNoSee(false);
+		GetMesh1P()->SetOwnerNoSee(true);
 	}
 }
 
@@ -376,12 +372,7 @@ void ABattleRoyaleCharacter::KilledByEnvironment(AActor* EnvActor)
 	if (GM)
 	{
 		if (!MyPlayerControllerRef) return;
-		ABattleRoyaleCharacter* DiedPlayer = Cast<ABattleRoyaleCharacter>(MyPlayerControllerRef->GetPawn());
-		if (DiedPlayer)
-		{
-			UE_LOG(LogTemp, Error, TEXT("DiedPlayer Not NULL"))
-			GM->PlayerDied(DiedPlayer);
-		}
+		GM->PlayerDied(MyPlayerControllerRef);
 	}
 }
 
