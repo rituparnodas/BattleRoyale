@@ -84,6 +84,8 @@ void ABattleRoyaleGameMode::PlayerDied(ABRPlayerController* DeadPlayerController
 				WinnerFound(WinnerPlayerState);
 			}
 		}
+
+		UpdatePlacingForAllPlayers();
 	}
 }
 
@@ -97,5 +99,19 @@ void ABattleRoyaleGameMode::WinnerFound(ABRPlayerState* Winner)
 	{
 		GS->OnGameOver();
 		GS->OnRep_GameOver();
+	}
+}
+
+
+void ABattleRoyaleGameMode::UpdatePlacingForAllPlayers()
+{
+	// Set Placing For All Player
+	for (ABRPlayerController* PC : AlivePlayerControllerList)
+	{
+		if (!PC) return;
+
+		ABRPlayerState* PlayerState = Cast<ABRPlayerState>(PC->PlayerState);
+		if (!PlayerState) return;
+		PlayerState->Placing = AlivePlayerControllerList.Num();
 	}
 }

@@ -30,4 +30,6 @@ public:
 
 	UFUNCTION(BlueprintCallable)
 		void WinnerFound(class ABRPlayerState* Winner);
+
+	void UpdatePlacingForAllPlayers();
 };
