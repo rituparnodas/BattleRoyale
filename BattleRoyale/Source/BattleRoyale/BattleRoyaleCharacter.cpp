@@ -381,6 +381,7 @@ void ABattleRoyaleCharacter::ModifyHealth(float HealthDelta)
 	if (GetLocalRole() == ROLE_Authority)
 	{
 		Health = FMath::Clamp(Health - HealthDelta, 0.f, MaxHealth);
+		OnRep_Health();
 	}
 }
 
@@ -405,7 +406,21 @@ void ABattleRoyaleCharacter::SetFlying(bool bIsFlying)
 	UpdateMovement();
 }
 
-void ABattleRoyaleCharacter::OnRep_Health(){}
+void ABattleRoyaleCharacter::OnRep_Health()
+{
+	if (IsLocallyControlled())
+	{
+		if (Health <= 50.f)
+		{
+			float PostProcessValue = (Health / 50.f) - 1.f;
+			FirstPersonCameraComponent->PostProcessBlendWeight = FMath::Abs(PostProcessValue);
+		}
+		else
+		{
+			FirstPersonCameraComponent->PostProcessBlendWeight = 0.f;
+		}
+	}
+}
 
 bool ABattleRoyaleCharacter::ServerFire_Validate(){ return true; }
 
